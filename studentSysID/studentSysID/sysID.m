@@ -47,9 +47,7 @@ function vehicleModel = sysID(inputData,outputData)
 
 % this is just a fixed reference vehicle model to get you started. It does not
 % use the input/output data at all!
-
-vehicleModelTest = @(theta) tf(theta(1)*theta(2),[1,theta(2)]);
-
+vehicle_tf = @(theta)tf(theta(1),[theta(2) theta(3)]);
 
 % DATA PREPROCESSING (may be useful, can be removed if not needed):
 % The following converts the cell arrays of time-series that are passed
@@ -79,15 +77,13 @@ end
 % The same approach may be useful for your systemID method.
 
 % Please comment this out if you do not need to use this code!!
-modelOutputArray = @(theta) lsim(vehicleModelTest(theta)*eye(length(inputDataArray)),inputDataArray,inputTimesVector);
-
-
-% rmse is the error between outputDataArray and lsim of model system with
-% input inputDataArray
-rmse = @(theta) sqrt(sum((modelOutputArray(theta) - outputDataArray).^2)/length(outputDataArray));
-
-theta = fminsearch(rmse,[270, 0.01]);
-
-vehicleModel = tf(theta(1)*theta(2),[1,theta(2)]);
-
+modelOutputArray = @(theta)lsim(vehicle_tf(theta)*eye(length(inputData)),inputDataArray,inputTimesVector);
+theta0=[10;12;13];
+rmse = @(A,B) sqrt(sum((A-B).^2)/length(A));
+%reshaping so all data is in one column instead of 4 when run using sysIDeval
+cost = @(theta) rmse(reshape(modelOutputArray(theta), [], 1), reshape(outputDataArray, [], 1)); 
+    
+thetaOpt = fminsearch(cost,theta0);
+vehicleModel=vehicle_tf(thetaOpt)
+disp("ok")
 
